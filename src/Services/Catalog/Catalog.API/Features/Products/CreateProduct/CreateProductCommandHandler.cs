@@ -1,7 +1,4 @@
-﻿using BuildingBlocks.CQRS;
-using Catalog.API.Models;
-
-namespace Catalog.API.Features.Products.CreateProduct;
+﻿namespace Catalog.API.Features.Products.CreateProduct;
 
 public record CreateProductCommand(
     string Name,
@@ -13,7 +10,19 @@ public record CreateProductCommand(
 
 public record CreateProductCommandResult(Guid Id);
 
-internal class CreateProductCommandHandler
+public class CreateProductCommandValidator : AbstractValidator<CreateProductCommand>
+{
+    public CreateProductCommandValidator()
+    {
+        RuleFor(p => p.Name).NotEmpty().WithMessage("Name is required");
+        RuleFor(p => p.Description).NotEmpty().WithMessage("Description is required");
+        RuleFor(p => p.Category).NotEmpty().WithMessage("Category is required");
+        RuleFor(p => p.ImageFile).NotEmpty().WithMessage("ImageFile is required");
+        RuleFor(p => p.Price).GreaterThan(0).WithMessage("Price is invalid");
+    }
+}
+
+internal class CreateProductCommandHandler(IDocumentSession session)
     : ICommandHandler<CreateProductCommand, CreateProductCommandResult>
 {
     public async Task<CreateProductCommandResult> Handle(
@@ -30,6 +39,9 @@ internal class CreateProductCommandHandler
             Price = command.Price,
         };
 
-        return new CreateProductCommandResult(Guid.NewGuid());
+        session.Store(product);
+        await session.SaveChangesAsync(cancellationToken);
+
+        return new CreateProductCommandResult(product.Id);
     }
 }

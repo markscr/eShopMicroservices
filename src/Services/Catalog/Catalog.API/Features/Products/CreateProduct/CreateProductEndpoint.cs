@@ -22,7 +22,7 @@ public class CreateProductEndpoint : ICarterModule
 
                     CreateProductCommandResult result = await sender.Send(command);
 
-                    var response = result.Adapt<CreateProductResponse>();
+                    CreateProductResponse response = result.Adapt<CreateProductResponse>();
 
                     return Results.Created($"/products/{response.Id}", response);
                 }
