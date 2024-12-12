@@ -15,15 +15,21 @@ builder.Services.AddValidatorsFromAssembly(assembly);
 
 builder.Services.AddCarter();
 
-builder
-    .Services.AddMarten(config =>
-        config.Connection(builder.Configuration.GetConnectionString("Database")!)
-    )
-    .UseLightweightSessions(); // Allows use of lightweight sessions for read/write operations
+string connectionString = builder.Configuration.GetConnectionString("Database")!;
+
+builder.Services.AddMarten(config => config.Connection(connectionString)).UseLightweightSessions(); // Allows use of lightweight sessions for read/write operations
+
+if (builder.Environment.IsDevelopment())
+{
+    // Seed DB
+    builder.Services.InitializeMartenWith<CatalogInitialData>();
+}
 
 builder.Services.AddLogging();
 
 builder.Services.AddExceptionHandler<eShopExceptionHandler>();
+
+builder.Services.AddHealthChecks().AddNpgSql(connectionString);
 
 var app = builder.Build();
 
@@ -31,5 +37,10 @@ var app = builder.Build();
 app.MapCarter();
 
 app.UseExceptionHandler(options => { });
+
+app.UseHealthChecks(
+    "/health",
+    new HealthCheckOptions { ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse }
+);
 
 app.Run();

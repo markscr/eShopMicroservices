@@ -1,6 +1,7 @@
 ﻿namespace Catalog.API.Features.Products.GetProductByCategory;
 
-public record GetProductByCategoryQuery(string Category) : IQuery<GetProductByCategoryResult>;
+public record GetProductByCategoryQuery(string Category, int PageNumber = 1, int PageSize = 10)
+    : IQuery<GetProductByCategoryResult>;
 
 public record GetProductByCategoryResult(IEnumerable<Product> Products);
 
@@ -20,10 +21,10 @@ internal class GetProductByCategoryQueryHandler(IDocumentSession session)
         CancellationToken cancellationToken
     )
     {
-        var products = await session
+        IPagedList<Product> products = await session
             .Query<Product>()
             .Where(p => p.Category.Contains(query.Category))
-            .ToListAsync(cancellationToken);
+            .ToPagedListAsync(query.PageNumber, query.PageSize, cancellationToken);
 
         return new GetProductByCategoryResult(products);
     }
