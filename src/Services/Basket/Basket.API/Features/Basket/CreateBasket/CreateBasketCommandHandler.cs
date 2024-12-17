@@ -13,13 +13,20 @@ public class CreateBasketCommandValidator : AbstractValidator<CreateBasketComman
     }
 }
 
-public class CreateBasketCommandHandler : ICommandHandler<CreateBasketCommand, CreateBasketResult>
+public class CreateBasketCommandHandler(IBasketRepository basketRepository)
+    : ICommandHandler<CreateBasketCommand, CreateBasketResult>
 {
+    private readonly IBasketRepository _basketRepository = basketRepository;
+
     public async Task<CreateBasketResult> Handle(
         CreateBasketCommand command,
         CancellationToken cancellationToken
     )
     {
-        return new CreateBasketResult(command.ShoppingCart.UserName);
+        ShoppingCart? shoppingCart = await _basketRepository.CreateBasket(
+            command.ShoppingCart,
+            cancellationToken
+        );
+        return new CreateBasketResult(shoppingCart.UserName);
     }
 }
